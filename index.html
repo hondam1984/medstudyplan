@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1d4ed8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MedStudyPlan">
+  <title>MedStudyPlan</title>
+
+  <!-- WebAPK 必須マニフェスト -->
+  <link rel="manifest" href="./manifest.json">
+
+  <!-- ファビコン・ホーム画面アイコン -->
+  <link rel="icon" type="image/png" href="https://i.postimg.cc/Z5GGqqXF/Gemini-Generated-Image-lauvt6lauvt6lauv.png">
+  <link rel="apple-touch-icon" href="https://i.postimg.cc/Z5GGqqXF/Gemini-Generated-Image-lauvt6lauvt6lauv.png">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+    }
+
+    /* 全画面GASフレーム */
+    #appFrame {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      border: none;
+      background: #f8fafc;
+      z-index: 1;
+    }
+
+    /* 初期セットアップ画面（GAS URL未設定時のみ表示） */
+    #setupScreen {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #f8fafc;
+    }
+    #setupScreen.hidden { display: none; }
+
+    .card {
+      width: 100%;
+      max-width: 440px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .logo-row img {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: #1d4ed8;
+    }
+    .title { font-size: 18px; font-weight: 800; color: #ffffff; }
+    .sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+    .desc {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #cbd5e1;
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 6px;
+    }
+    input[type="url"] {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 13px;
+      outline: none;
+      margin-bottom: 10px;
+    }
+    input[type="url"]:focus { border-color: #6366f1; }
+    .err {
+      font-size: 12px;
+      color: #fda4af;
+      margin-bottom: 12px;
+      display: none;
+    }
+    .btn-primary {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 14px;
+      background: #4f46e5;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-primary:active { transform: scale(0.98); }
+
+    /* WebAPK インストール案内バナー（未インストール時のみ下部表示） */
+    #installBanner {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 74px;
+      z-index: 15;
+      max-width: 520px;
+      margin: 0 auto;
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(8px);
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: #ffffff;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+    }
+    #installBanner.hidden { display: none; }
+    .install-text { font-size: 12px; font-weight: 700; line-height: 1.4; }
+    .install-sub { font-size: 10px; color: #94a3b8; font-weight: 500; }
+    .install-actions { display: flex; align-items: center; gap: 6px; shrink: 0; }
+    .btn-install {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 10px;
+      background: #4f46e5;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .btn-close-banner {
+      padding: 6px 8px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 全画面 GAS Webアプリ表示エリア -->
+  <iframe
+    id="appFrame"
+    title="MedStudyPlan"
+    allow="camera; microphone; clipboard-read; clipboard-write; fullscreen"
+    referrerpolicy="no-referrer-when-downgrade"
+  ></iframe>
+
+  <!-- 初回GAS URL設定画面（DEFAULT_GAS_URL を埋めておけばスキップされます） -->
+  <div id="setupScreen" class="hidden">
+    <div class="card">
+      <div class="logo-row">
+        <img src="https://i.postimg.cc/Z5GGqqXF/Gemini-Generated-Image-lauvt6lauvt6lauv.png" alt="MedStudyPlan">
+        <div>
+          <div class="title">MedStudyPlan アプリ設定</div>
+          <div class="sub">WebAPK 起動用ランチャー</div>
+        </div>
+      </div>
+      <p class="desc">
+        お使いの Google Apps Script（GAS）の WebアプリURL（末尾が <strong>/exec</strong> のURL）を貼り付けてください。一度保存すると次回から自動で全画面起動します。
+      </p>
+      <label for="gasUrlInput">GAS Webアプリ URL（/exec）</label>
+      <input id="gasUrlInput" type="url" placeholder="https://script.google.com/macros/s/xxxxx/exec" required>
+      <div id="urlError" class="err">※ https://script.google.com/.../exec の形式で入力してください。</div>
+      <button id="btnSaveGasUrl" type="button" class="btn-primary">保存してアプリを起動</button>
+    </div>
+  </div>
+
+  <!-- Android Chrome 用「アプリをインストール（WebAPK）」バナー -->
+  <div id="installBanner" class="hidden">
+    <div>
+      <div class="install-text">📲 Androidアプリとしてインストール</div>
+      <div class="install-sub">ホーム画面にWebAPK（全画面アプリ）を追加できます</div>
+    </div>
+    <div class="install-actions">
+      <button id="btnTriggerInstall" type="button" class="btn-install">インストール</button>
+      <button id="btnDismissBanner" type="button" class="btn-close-banner" aria-label="閉じる">×</button>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      // ★ここにGASの公開URL（末尾が /exec）を直接書き込んでおくと、初回入力なしで即起動します
+      const DEFAULT_GAS_URL = '';
+
+      const STORAGE_GAS_URL = 'medstudyplan_pwa_gas_url_v1';
+      const frame = document.getElementById('appFrame');
+      const setupScreen = document.getElementById('setupScreen');
+      const urlInput = document.getElementById('gasUrlInput');
+      const urlError = document.getElementById('urlError');
+      const installBanner = document.getElementById('installBanner');
+      let deferredPrompt = null;
+
+      // 1. Service Worker の登録（WebAPK生成の必須要件）
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch((err) => {
+            console.warn('ServiceWorker registration failed:', err);
+          });
+        });
+      }
+
+      // 2. Android Chrome のインストールプロンプト（WebAPK）捕捉
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (!isStandalone) {
+          installBanner.classList.remove('hidden');
+        }
+      });
+
+      window.addEventListener('appinstalled', () => {
+        deferredPrompt = null;
+        installBanner.classList.add('hidden');
+      });
+
+      document.getElementById('btnTriggerInstall').addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          installBanner.classList.add('hidden');
+        }
+        deferredPrompt = null;
+      });
+
+      document.getElementById('btnDismissBanner').addEventListener('click', () => {
+        installBanner.classList.add('hidden');
+      });
+
+      // 3. GAS WebアプリURLの検証と起動
+      function isValidGasExecUrl(url) {
+        if (!url) return false;
+        const trimmed = url.trim();
+        return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(\?.*)?$/i.test(trimmed);
+      }
+
+      function launchGasApp(url) {
+        setupScreen.classList.add('hidden');
+        frame.src = url.trim();
+      }
+
+      // URLパラメータ ?reset=1 でURL再設定可能
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('reset') === '1') {
+        localStorage.removeItem(STORAGE_GAS_URL);
+      }
+
+      const savedUrl = DEFAULT_GAS_URL || localStorage.getItem(STORAGE_GAS_URL) || '';
+      if (isValidGasExecUrl(savedUrl)) {
+        launchGasApp(savedUrl);
+      } else {
+        setupScreen.classList.remove('hidden');
+        if (savedUrl) urlInput.value = savedUrl;
+      }
+
+      document.getElementById('btnSaveGasUrl').addEventListener('click', () => {
+        const val = urlInput.value.trim();
+        if (!isValidGasExecUrl(val)) {
+          urlError.style.display = 'block';
+          return;
+        }
+        urlError.style.display = 'none';
+        localStorage.setItem(STORAGE_GAS_URL, val);
+        launchGasApp(val);
+      });
+    })();
+  </script>
+</body>
+</html>
