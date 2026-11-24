@@ -1,0 +1,25 @@
+{
+  "name": "MedStudyPlan - 学習スケジュール表",
+  "short_name": "MedStudyPlan",
+  "description": "学習スケジュール・タスク・ルーティン管理アプリ",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#1d4ed8",
+  "icons": [
+    {
+      "src": "https://i.postimg.cc/Z5GGqqXF/Gemini-Generated-Image-lauvt6lauvt6lauv.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.postimg.cc/Z5GGqqXF/Gemini-Generated-Image-lauvt6lauvt6lauv.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
