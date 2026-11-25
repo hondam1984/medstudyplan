@@ -13,9 +13,9 @@
   <!-- WebAPK 必須マニフェスト -->
   <link rel="manifest" href="./manifest.json">
 
-  <!-- ファビコン・ホーム画面アイコン -->
-  <link rel="icon" type="image/png" href="https://i.postimg.cc/Z5GGqqXF/Gemini-Generated-Image-lauvt6lauvt6lauv.png">
-  <link rel="apple-touch-icon" href="https://i.postimg.cc/Z5GGqqXF/Gemini-Generated-Image-lauvt6lauvt6lauv.png">
+  <!-- ファビコン・ホーム画面アイコン（同オリジン配置） -->
+  <link rel="icon" type="image/png" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -40,15 +40,16 @@
       z-index: 1;
     }
 
-    /* 初期セットアップ画面（GAS URL未設定時のみ表示） */
+    /* セットアップ・診断画面 */
     #setupScreen {
       position: fixed;
       inset: 0;
       z-index: 20;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      padding: 20px;
+      padding: 20px 16px 96px;
+      overflow-y: auto;
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       color: #f8fafc;
     }
@@ -56,32 +57,34 @@
 
     .card {
       width: 100%;
-      max-width: 440px;
+      max-width: 460px;
       background: #1e293b;
       border: 1px solid #334155;
       border-radius: 24px;
-      padding: 24px;
+      padding: 22px;
       box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      margin: auto 0;
     }
     .logo-row {
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
-    .logo-row img {
+    .logo-svg {
       width: 48px;
       height: 48px;
       border-radius: 14px;
-      background: #1d4ed8;
+      flex-shrink: 0;
+      overflow: hidden;
     }
     .title { font-size: 18px; font-weight: 800; color: #ffffff; }
     .sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
     .desc {
-      font-size: 13px;
+      font-size: 12.5px;
       line-height: 1.6;
       color: #cbd5e1;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
     label {
       display: block;
@@ -105,7 +108,24 @@
     .err {
       font-size: 12px;
       color: #fda4af;
+      background: rgba(225, 29, 72, 0.15);
+      border: 1px solid rgba(225, 29, 72, 0.35);
+      border-radius: 10px;
+      padding: 8px 10px;
       margin-bottom: 12px;
+      line-height: 1.5;
+      display: none;
+      word-break: break-all;
+    }
+    .ok-msg {
+      font-size: 12px;
+      color: #6ee7b7;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 12px;
+      line-height: 1.5;
       display: none;
     }
     .btn-primary {
@@ -121,18 +141,82 @@
     }
     .btn-primary:active { transform: scale(0.98); }
 
-    /* WebAPK インストール案内バナー（未インストール時のみ下部表示） */
+    .btn-install-big {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 14px;
+      background: #059669;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(5, 150, 105, 0.35);
+    }
+    .btn-install-big:disabled {
+      background: #334155;
+      color: #94a3b8;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+    .btn-install-big:not(:disabled):active { transform: scale(0.98); }
+
+    .tools-box {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .tools-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #93c5fd;
+    }
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .btn-secondary {
+      padding: 10px 8px;
+      border: 1px solid #475569;
+      border-radius: 12px;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn-secondary:active { background: #1e293b; }
+
+    .diag-list {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 11.5px;
+      line-height: 1.75;
+      color: #cbd5e1;
+    }
+    .diag-ok { color: #34d399; font-weight: 700; }
+    .diag-ng { color: #fb7185; font-weight: 700; }
+    .diag-warn { color: #fbbf24; font-weight: 700; }
+
+    /* WebAPK インストール案内バナー（未インストール時のみ最前面に表示） */
     #installBanner {
       position: fixed;
       left: 12px;
       right: 12px;
-      bottom: 74px;
-      z-index: 15;
+      bottom: 16px;
+      z-index: 35;
       max-width: 520px;
       margin: 0 auto;
-      background: rgba(15, 23, 42, 0.94);
+      background: rgba(15, 23, 42, 0.96);
       backdrop-filter: blur(8px);
-      border: 1px solid #334155;
+      border: 1px solid #10b981;
       border-radius: 16px;
       padding: 10px 14px;
       display: flex;
@@ -140,17 +224,17 @@
       justify-content: space-between;
       gap: 10px;
       color: #ffffff;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.45);
     }
     #installBanner.hidden { display: none; }
-    .install-text { font-size: 12px; font-weight: 700; line-height: 1.4; }
+    .install-text { font-size: 12px; font-weight: 800; line-height: 1.4; }
     .install-sub { font-size: 10px; color: #94a3b8; font-weight: 500; }
-    .install-actions { display: flex; align-items: center; gap: 6px; shrink: 0; }
+    .install-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
     .btn-install {
       padding: 8px 12px;
       border: none;
       border-radius: 10px;
-      background: #4f46e5;
+      background: #059669;
       color: #fff;
       font-size: 12px;
       font-weight: 800;
@@ -178,23 +262,58 @@
     referrerpolicy="no-referrer-when-downgrade"
   ></iframe>
 
-  <!-- 初回GAS URL設定画面（DEFAULT_GAS_URL を埋めておけばスキップされます） -->
+  <!-- セットアップ＆WebAPK診断画面（URL未設定時または ?debug=1 で表示） -->
   <div id="setupScreen" class="hidden">
     <div class="card">
       <div class="logo-row">
-        <img src="https://i.postimg.cc/Z5GGqqXF/Gemini-Generated-Image-lauvt6lauvt6lauv.png" alt="MedStudyPlan">
+        <div class="logo-svg">
+          <svg id="brandLogoSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="48" height="48">
+            <rect width="128" height="128" rx="28" fill="#1d4ed8"/>
+            <rect x="22" y="28" width="44" height="26" rx="6" fill="#facc15" stroke="#0f172a" stroke-width="4"/>
+            <circle cx="80" cy="46" r="18" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+            <path d="M80 46L90 38" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="80" cy="46" r="3" fill="#ef4444"/>
+            <path d="M18 46h40c4 0 6 3 6 7v47c-6-4-14-6-22-6H18V46z" fill="#ffffff" stroke="#0f172a" stroke-width="4" stroke-linejoin="round"/>
+            <path d="M110 46H70c-4 0-6 3-6 7v47c6-4 14-6 22-6h24V46z" fill="#ffffff" stroke="#0f172a" stroke-width="4" stroke-linejoin="round"/>
+            <path d="M36 58h10v8h8v10h-8v8H36v-8h-8V66h8v-8z" fill="#ef4444" stroke="#0f172a" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M75 61l4 4 8-8M75 74l4 4 8-8M92 61h10M92 74h10" stroke="#0f172a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </div>
         <div>
           <div class="title">MedStudyPlan アプリ設定</div>
-          <div class="sub">WebAPK 起動用ランチャー</div>
+          <div class="sub">WebAPK ランチャー v3</div>
         </div>
       </div>
+
       <p class="desc">
-        お使いの Google Apps Script（GAS）の WebアプリURL（末尾が <strong>/exec</strong> のURL）を貼り付けてください。一度保存すると次回から自動で全画面起動します。
+        GAS の WebアプリURL（末尾が <strong>/exec</strong> のURL）を入力してください。一度保存すると、この端末では次回以降URL入力なしで自動起動します。
       </p>
-      <label for="gasUrlInput">GAS Webアプリ URL（/exec）</label>
+
+      <label for="gasUrlInput">GAS Webアプリ URL（末尾 /exec）</label>
       <input id="gasUrlInput" type="url" placeholder="https://script.google.com/macros/s/xxxxx/exec" required>
-      <div id="urlError" class="err">※ https://script.google.com/.../exec の形式で入力してください。</div>
+      <div id="urlError" class="err"></div>
+      <div id="urlOkMsg" class="ok-msg"></div>
       <button id="btnSaveGasUrl" type="button" class="btn-primary">保存してアプリを起動</button>
+
+      <!-- WebAPK 必須アイコン生成＆診断ツール -->
+      <div class="tools-box">
+        <div class="tools-title">🛠 WebAPK インストール診断＆ツール</div>
+        <div id="diagList" class="diag-list">診断中...</div>
+
+        <!-- 診断画面から直接押せるWebAPKインストールボタン -->
+        <button id="btnDirectInstall" type="button" class="btn-install-big" disabled>
+          ⏳ インストール準備を確認中...
+        </button>
+
+        <div class="btn-row">
+          <button id="btnDlIcon192" type="button" class="btn-secondary">⬇ icon-192.png を作成</button>
+          <button id="btnDlIcon512" type="button" class="btn-secondary">⬇ icon-512.png を作成</button>
+        </div>
+        <div class="btn-row">
+          <button id="btnRefreshCache" type="button" class="btn-secondary">🔄 キャッシュ更新＆再読込</button>
+          <button id="btnCopyAutoLink" type="button" class="btn-secondary">🔗 他端末用リンクコピー</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -212,7 +331,7 @@
 
   <script>
     (() => {
-      // ★ここにGASの公開URL（末尾が /exec）を直接書き込んでおくと、初回入力なしで即起動します
+      // ★ここにGASの公開URL（末尾が /exec）を書き込むと、どの端末でも初回入力なしで即起動します
       const DEFAULT_GAS_URL = '';
 
       const STORAGE_GAS_URL = 'medstudyplan_pwa_gas_url_v1';
@@ -220,84 +339,321 @@
       const setupScreen = document.getElementById('setupScreen');
       const urlInput = document.getElementById('gasUrlInput');
       const urlError = document.getElementById('urlError');
+      const urlOkMsg = document.getElementById('urlOkMsg');
+      const diagList = document.getElementById('diagList');
       const installBanner = document.getElementById('installBanner');
-      let deferredPrompt = null;
+      const btnDirectInstall = document.getElementById('btnDirectInstall');
 
-      // 1. Service Worker の登録（WebAPK生成の必須要件）
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').catch((err) => {
-            console.warn('ServiceWorker registration failed:', err);
-          });
-        });
+      let deferredPrompt = null;
+      let swStateText = '登録確認中...';
+
+      function showError(msg) {
+        urlOkMsg.style.display = 'none';
+        urlError.textContent = msg;
+        urlError.style.display = 'block';
       }
 
-      // 2. Android Chrome のインストールプロンプト（WebAPK）捕捉
+      function showOkMsg(msg) {
+        urlError.style.display = 'none';
+        urlOkMsg.textContent = msg;
+        urlOkMsg.style.display = 'block';
+      }
+
+      // 1. GAS URL の柔軟な検証（/macros/s/・/macros/u/0/s/・/a/macros/.../s/ 全対応）
+      function cleanAndValidateGasUrl(raw) {
+        if (!raw) return '';
+        let trimmed = String(raw).trim();
+        try {
+          if (/^https%3A/i.test(trimmed)) {
+            trimmed = decodeURIComponent(trimmed).trim();
+          }
+        } catch (e) {}
+        if (/^https:\/\/script\.google\.com\/.+\/(exec|dev)(\?.*)?$/i.test(trimmed)) {
+          return trimmed;
+        }
+        return '';
+      }
+
+      function explainInvalidUrl(raw) {
+        const s = String(raw || '').trim();
+        if (!s) return 'GAS の WebアプリURLを入力してください。';
+        if (s.includes('docs.google.com/spreadsheets')) {
+          return 'これはスプレッドシートのURLです。GASの「デプロイ → WebアプリURL（末尾が /exec）」を貼り付けてください。';
+        }
+        if (s.includes('/edit')) {
+          return 'これはGASエディタの編集URLです。「デプロイを管理」からコピーできる末尾が /exec のURLを貼り付けてください。';
+        }
+        return 'URL形式が正しくありません。https://script.google.com/macros/s/.../exec の形式で入力してください。（受け取った値: ' + s + '）';
+      }
+
+      function autoSaveInputIfValid() {
+        const val = cleanAndValidateGasUrl(urlInput.value);
+        if (val) {
+          localStorage.setItem(STORAGE_GAS_URL, val);
+          return val;
+        }
+        return cleanAndValidateGasUrl(DEFAULT_GAS_URL) || cleanAndValidateGasUrl(localStorage.getItem(STORAGE_GAS_URL) || '');
+      }
+
+      function launchGasApp(url) {
+        setupScreen.classList.add('hidden');
+        frame.src = url;
+      }
+
+      // 2. Service Worker の登録（キャッシュを無視して最新を取得）
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', async () => {
+          try {
+            const reg = await navigator.serviceWorker.register('./sw.js', {
+              scope: './',
+              updateViaCache: 'none'
+            });
+            reg.update().catch(() => {});
+            swStateText = (navigator.serviceWorker.controller || reg.active)
+              ? 'OK (有効)'
+              : '登録済み（下の「キャッシュ更新＆再読込」を1回押してください）';
+            runDiagnostics();
+          } catch (err) {
+            swStateText = 'NG (' + (err && err.message ? err.message : '登録失敗') + ')';
+            runDiagnostics();
+          }
+        });
+      } else {
+        swStateText = 'NG (ブラウザ非対応：Chromeで開いてください)';
+      }
+
+      // 3. Android Chrome のインストールプロンプト（WebAPK）捕捉
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+      function updateInstallButtons() {
+        if (isStandalone) {
+          btnDirectInstall.disabled = true;
+          btnDirectInstall.textContent = '✅ インストール済みアプリとして起動中';
+          installBanner.classList.add('hidden');
+        } else if (deferredPrompt) {
+          btnDirectInstall.disabled = false;
+          btnDirectInstall.textContent = '📲 今すぐアプリをインストール（WebAPK）';
+          if (setupScreen.classList.contains('hidden')) {
+            installBanner.classList.remove('hidden');
+          }
+        } else {
+          btnDirectInstall.disabled = true;
+          btnDirectInstall.textContent = '⏳ 条件確認中（診断1〜5がOKなら再読込）';
+        }
+      }
+
+      async function triggerInstallFlow() {
+        if (!deferredPrompt) return;
+        // インストール前に、入力欄に有効なGAS URLがあれば自動保存しておく（初回入力忘れ防止）
+        autoSaveInputIfValid();
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          installBanner.classList.add('hidden');
+          showOkMsg('✅ インストールを開始しました！数秒後にホーム画面へアイコンが追加されます。');
+        }
+        deferredPrompt = null;
+        updateInstallButtons();
+        runDiagnostics();
+      }
 
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        if (!isStandalone) {
-          installBanner.classList.remove('hidden');
-        }
+        updateInstallButtons();
+        runDiagnostics();
       });
 
       window.addEventListener('appinstalled', () => {
         deferredPrompt = null;
         installBanner.classList.add('hidden');
+        updateInstallButtons();
+        runDiagnostics();
       });
 
-      document.getElementById('btnTriggerInstall').addEventListener('click', async () => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        const choice = await deferredPrompt.userChoice;
-        if (choice && choice.outcome === 'accepted') {
-          installBanner.classList.add('hidden');
-        }
-        deferredPrompt = null;
-      });
-
+      btnDirectInstall.addEventListener('click', triggerInstallFlow);
+      document.getElementById('btnTriggerInstall').addEventListener('click', triggerInstallFlow);
       document.getElementById('btnDismissBanner').addEventListener('click', () => {
         installBanner.classList.add('hidden');
       });
 
-      // 3. GAS WebアプリURLの検証と起動
-      function isValidGasExecUrl(url) {
-        if (!url) return false;
-        const trimmed = url.trim();
-        return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(\?.*)?$/i.test(trimmed);
-      }
-
-      function launchGasApp(url) {
-        setupScreen.classList.add('hidden');
-        frame.src = url.trim();
-      }
-
-      // URLパラメータ ?reset=1 でURL再設定可能
+      // 4. URLパラメータ解析（?reset=1 / ?debug=1 / ?gas=... / #gas=... 全対応）
       const params = new URLSearchParams(window.location.search);
+      const isDebugMode = params.get('debug') === '1';
       if (params.get('reset') === '1') {
         localStorage.removeItem(STORAGE_GAS_URL);
       }
 
-      const savedUrl = DEFAULT_GAS_URL || localStorage.getItem(STORAGE_GAS_URL) || '';
-      if (isValidGasExecUrl(savedUrl)) {
+      let incomingRawGas = params.get('gas') || '';
+      if (!incomingRawGas && window.location.hash) {
+        const hashStr = window.location.hash.replace(/^#/, '');
+        const idx = hashStr.toLowerCase().indexOf('gas=');
+        if (idx !== -1) {
+          const valPart = hashStr.slice(idx + 4).split('&')[0];
+          try {
+            incomingRawGas = decodeURIComponent(valPart);
+          } catch (e) {
+            incomingRawGas = valPart;
+          }
+        }
+      }
+
+      let incomingError = '';
+      if (incomingRawGas) {
+        const validIncoming = cleanAndValidateGasUrl(incomingRawGas);
+        if (validIncoming) {
+          localStorage.setItem(STORAGE_GAS_URL, validIncoming);
+        } else {
+          incomingError = explainInvalidUrl(incomingRawGas);
+        }
+      }
+
+      const savedUrl = cleanAndValidateGasUrl(DEFAULT_GAS_URL) || cleanAndValidateGasUrl(localStorage.getItem(STORAGE_GAS_URL) || '');
+
+      if (savedUrl && !isDebugMode) {
         launchGasApp(savedUrl);
       } else {
         setupScreen.classList.remove('hidden');
-        if (savedUrl) urlInput.value = savedUrl;
+        if (savedUrl) {
+          urlInput.value = savedUrl;
+          showOkMsg('✓ GAS URL はこの端末に保存済みです。');
+        } else if (incomingRawGas) {
+          urlInput.value = incomingRawGas;
+        }
+        if (incomingError) showError(incomingError);
       }
+      updateInstallButtons();
 
       document.getElementById('btnSaveGasUrl').addEventListener('click', () => {
-        const val = urlInput.value.trim();
-        if (!isValidGasExecUrl(val)) {
-          urlError.style.display = 'block';
+        const raw = urlInput.value;
+        const val = cleanAndValidateGasUrl(raw);
+        if (!val) {
+          showError(explainInvalidUrl(raw));
           return;
         }
         urlError.style.display = 'none';
         localStorage.setItem(STORAGE_GAS_URL, val);
         launchGasApp(val);
+        updateInstallButtons();
       });
+
+      // 5. 高精細 PNG アイコン（192x192 / 512x512）生成ダウンロード（ベクターサイズ正規化）
+      function downloadPngIcon(size, filename) {
+        const origSvg = document.getElementById('brandLogoSvg');
+        const cloned = origSvg.cloneNode(true);
+        cloned.setAttribute('width', String(size));
+        cloned.setAttribute('height', String(size));
+        const svgData = new XMLSerializer().serializeToString(cloned);
+        const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          // アプリアイコンの四隅に白い隙間が出ないよう全面をベース色で塗る
+          ctx.fillStyle = '#1d4ed8';
+          ctx.fillRect(0, 0, size, size);
+          ctx.drawImage(img, 0, 0, size, size);
+          URL.revokeObjectURL(url);
+          canvas.toBlob((pngBlob) => {
+            const dlUrl = URL.createObjectURL(pngBlob);
+            const a = document.createElement('a');
+            a.href = dlUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(dlUrl), 1500);
+          }, 'image/png');
+        };
+        img.src = url;
+      }
+
+      document.getElementById('btnDlIcon192').addEventListener('click', () => downloadPngIcon(192, 'icon-192.png'));
+      document.getElementById('btnDlIcon512').addEventListener('click', () => downloadPngIcon(512, 'icon-512.png'));
+
+      // キャッシュ＆古いSWを強制更新して再読込
+      document.getElementById('btnRefreshCache').addEventListener('click', async () => {
+        try {
+          if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+          }
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map(r => r.update()));
+          }
+        } catch (e) {}
+        window.location.reload();
+      });
+
+      document.getElementById('btnCopyAutoLink').addEventListener('click', async () => {
+        const targetGas = autoSaveInputIfValid();
+        if (!targetGas) {
+          showError('先に上の欄へ GAS の /exec URL を入力してください。');
+          return;
+        }
+        const baseUrl = window.location.origin + window.location.pathname;
+        const autoLink = `${baseUrl}#gas=${encodeURIComponent(targetGas)}`;
+        try {
+          await navigator.clipboard.writeText(autoLink);
+          showOkMsg('✓ 他端末用のワンタップ自動設定リンクをコピーしました！必ず Chrome で開いてください。');
+        } catch (e) {
+          prompt('以下のリンクをコピーして、別端末の Google Chrome で開いてください：', autoLink);
+        }
+      });
+
+      // 6. WebAPK 診断チェッカー
+      async function checkImageSize(path, expectedSize) {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            const ok = img.naturalWidth === expectedSize && img.naturalHeight === expectedSize;
+            resolve({ ok, actual: `${img.naturalWidth}×${img.naturalHeight}` });
+          };
+          img.onerror = () => resolve({ ok: false, actual: '未配置(404)' });
+          img.src = path + '?t=' + Date.now();
+        });
+      }
+
+      async function runDiagnostics() {
+        if (!diagList) return;
+        const rows = [];
+        const isHttps = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+        rows.push(`1. HTTPS通信: <span class="${isHttps ? 'diag-ok' : 'diag-ng'}">${isHttps ? '✅ OK' : '❌ NG'}</span>`);
+
+        try {
+          const res = await fetch('./manifest.json?t=' + Date.now(), { cache: 'no-store' });
+          if (res.ok) {
+            await res.json();
+            rows.push(`2. manifest.json: <span class="diag-ok">✅ OK</span>`);
+          } else {
+            rows.push(`2. manifest.json: <span class="diag-ng">❌ HTTP ${res.status}</span>`);
+          }
+        } catch (e) {
+          rows.push(`2. manifest.json: <span class="diag-ng">❌ 読込/構文エラー</span>`);
+        }
+
+        const i192 = await checkImageSize('./icon-192.png', 192);
+        const i512 = await checkImageSize('./icon-512.png', 512);
+        rows.push(`3. icon-192.png: <span class="${i192.ok ? 'diag-ok' : 'diag-ng'}">${i192.ok ? '✅ OK (192×192)' : '❌ ' + i192.actual}</span>`);
+        rows.push(`4. icon-512.png: <span class="${i512.ok ? 'diag-ok' : 'diag-ng'}">${i512.ok ? '✅ OK (512×512)' : '❌ ' + i512.actual}</span>`);
+
+        rows.push(`5. Service Worker: <span class="${swStateText.startsWith('OK') ? 'diag-ok' : 'diag-warn'}">${swStateText}</span>`);
+        rows.push(`6. WebAPK準備: <span class="${deferredPrompt || isStandalone ? 'diag-ok' : 'diag-warn'}">${
+          isStandalone
+            ? '✅ インストール済み起動中'
+            : deferredPrompt
+              ? '✅ インストール可能！（下の緑ボタンを押してください）'
+              : '⏳ 1〜5がすべてOKなら「キャッシュ更新＆再読込」を押してください'
+        }</span>`);
+
+        diagList.innerHTML = rows.join('<br>');
+      }
+
+      runDiagnostics();
     })();
   </script>
 </body>
