@@ -1,13 +1,10 @@
-const CACHE_NAME = 'medstudyplan-shell-v1';
-const SHELL_ASSETS = [
-  './',
-  './index.html',
-  './manifest.json'
-];
+const CACHE_NAME = 'medstudyplan-shell-v3';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_ASSETS))
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.add('./'))
+      .catch(() => {})
   );
   self.skipWaiting();
 });
@@ -25,7 +22,6 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  // GAS本体への通信はキャッシュせず常に最新を取得
   if (url.origin !== self.location.origin) return;
 
   event.respondWith(
